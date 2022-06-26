@@ -1,8 +1,9 @@
-// title: Portfolioprüfung – Werkstück A – Alternative 1
-// description:  This c program is an example about inter-process communication via a pipe for Linux. I created 4 processes by forking 3 times.
-//               The same program you can see in main.c too, but with two fork() calls.
-// author:       Nelli Margaryan    
-// date:         June 9th 2022            
+// Titel:         Portfolioprüfung – Werkstück A – Alternative 1
+// Beschreibung:  Dieses C-Programm ist ein Beispiel für die Kommunikation zwischen Prozessen über eine Pipe.
+//                Ich habe 4 Prozesse erstellt, indem ich 3 mal das Systemaufruf fork() benutzt habe.
+//                Dasselbe Programm können Sie auch in main.c sehen, aber mit zwei Aufrufen von fork(). Bewerten Sie bitte nur prog.c!
+// Autor:         Nelli Margaryan
+// Datum:         09.06.2022
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,9 +11,35 @@
 #include <unistd.h>
 #include <time.h>
 #include <signal.h>
+#include <stdbool.h>
+
+// Prozesse abbrechen, Alternative 1
+
+// void signal_handler(int num)
+// {
+//   printf("Ich bin hier, weil Strg + C gedrückt wurde\n");
+//   signal(SIGINT, SIG_DFL);
+// }
+
+// Prozesse abbrechen, Alternative 2
+
+// bool run = true;
+// void interrupt(int signal)
+// {
+//   if (signal == SIGINT)
+//   {
+//     run = false;
+//     printf("Mit Strg + C abgebrochen");
+//   }
+// }
 
 int main(int argc, char *argv[])
 {
+  // Abbrechen des Prozesses
+
+  // signal(SIGINT, signal_handler);
+  // signal(SIGINT, interrupt);
+
   // Das Anlegen der Pipe
   int firstpipe[2];
   if (pipe(firstpipe) == -1)
@@ -146,6 +173,7 @@ int main(int argc, char *argv[])
     // Es kam beim fork zu einem Fehler
     if (id3 < 0)
     {
+
       printf("Es kam bei fork(3) zu einem Fehler!\n");
       // Programmabbruch
       return 13;
@@ -153,6 +181,7 @@ int main(int argc, char *argv[])
 
     if (id3 == 0)
     {
+
       printf("Report: Dieser Prozess hat auf die Ergebnisse von Stat zugegriffen und die statistischen Daten in der Shell ausgegeben.\n");
       printf("Report: PID: %i\n", getpid());
       close(thirdpipe[1]);
@@ -186,7 +215,7 @@ int main(int argc, char *argv[])
     {
       printf("Es kam bei fork(2) zu einem Fehler!\n");
       // Programmabbruch
-      return 10;
+      return 16;
     }
     if (id2 == 0)
     {
@@ -201,13 +230,13 @@ int main(int argc, char *argv[])
       if (read(secondpipe[0], &anzahlZahlen, sizeof(int)) < 0)
       {
         printf("Fehler beim Lesen von SecondPipe");
-        return 16;
+        return 17;
       }
 
       if (read(secondpipe[0], array, sizeof(int) * anzahlZahlen) < 0)
       {
         printf("Fehler beim Lesen von SecondPipe");
-        return 17;
+        return 18;
       }
 
       close(secondpipe[0]);
@@ -216,7 +245,7 @@ int main(int argc, char *argv[])
       if (file == NULL)
       {
         printf("Fehler beim erstellen eines Dateis!\n");
-        return 18;
+        exit(1);
       }
       for (i = 0; i < anzahlZahlen; i++)
       {

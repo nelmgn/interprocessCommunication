@@ -1,8 +1,9 @@
-// title: Portfolioprüfung – Werkstück A – Alternative 1
-// description:  This c program is an example about inter-process communication via a pipe for Linux. I created 4 processes by forking 2 times.
-//               The same program you can see in prog.c too, but with three fork() calls.
-// author:       Nelli Margaryan    
-// date:         June 9th 2022
+// Titel:         Portfolioprüfung – Werkstück A – Alternative 1
+// Beschreibung:  Dieses C-Programm ist ein Beispiel für die Kommunikation zwischen Prozessen über eine Pipe.
+//                Ich habe 4 Prozesse erstellt, indem ich 2 mal das Systemaufruf fork() benutzt habe.
+//                Dasselbe Programm können Sie auch in prog.c sehen, aber mit drei Aufrufen von fork(). Bewerten Sie bitte nur prog.c!
+// Autor:         Nelli Margaryan
+// Datum:         09.06.2022
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,16 +12,8 @@
 #include <time.h>
 #include <signal.h>
 
-// void signal_handler(int num) {
-//   printf("Ich bin hier, weil Strg + C gedrückt wurde\n");
-//   signal(SIGINT, SIG_DFL);
-// }
-
 int main(int argc, char *argv[])
 {
-  // Abbrechen des Prozesses
-  // signal(SIGINT, signal_handler);
-
   // Das Anlegen der Pipe
   int firstpipe[2];
   if (pipe(firstpipe) == -1)
@@ -171,20 +164,20 @@ int main(int argc, char *argv[])
       close(secondpipe[0]);
 
       // Anzahl von Zufallszahlen
-      int anzahlZahlen; 
+      int anzahlZahlen;
       int i;
       int array[10];
 
       // Zufallszahlen erzeugen
       srand(time(NULL));
       // Es können maximal 10 Zufallszahlen erzeugt werden
-      anzahlZahlen = rand() % 10 + 1; 
+      anzahlZahlen = rand() % 10 + 1;
 
       printf("Zufallszahlen: ");
       for (i = 0; i < anzahlZahlen; i++)
       {
         // Die Zufallszahlen sind zwischen 0 und 10
-        array[i] = rand() % 11; 
+        array[i] = rand() % 11;
         printf("%d ", array[i]);
       }
       printf("\n");
