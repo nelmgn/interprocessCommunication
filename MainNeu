@@ -1,0 +1,339 @@
+// includes                             //iclude=enthalten Anweisungen an den Compilern
+#include <sys/ipc.h>                    //wird für Sema und Shm verwendet 
+#include <sys/shm.h>                    //wird für shm genutzt
+#include <stdio.h>                      //Definiert fpos_t und FILE
+#include <string.h>                     //Definiert Strings, size_t und NULL
+#include <stdlib.h>                     //Zur Ausführung/Definition von: size_t, div_t usw und NULL, EXIT_FAILURE, EXIT_SUCCESS usw
+#include <unistd.h>                     //Definiert und deklariert verschiedene Funktionen (POSIX)
+#include <sys/wait.h>                   //Definiert verschiedene Konstanten
+#include <sys/types.h>                  //definiert Verschiedene typen wie zb key_t
+#include <time.h>                       //Definiert Verschiedene Variablentypen
+
+//Speicherplatz geben
+#define MAXMEMSIZE 20
+
+// include semaphore
+#include <semaphore.h>                          //Wird zur Durchführung von Semaphoren verwendet. Definiert sem_t und alles was mit Semaphoren zu tun hat
+
+
+// Main
+int main(int argc, char **argv)
+{
+
+    // Semaphore
+    // erstellung Semaphor
+    sem_t semaphore;                            // semaphor wird erstellt. sem_t muss mit sem_init initialisiert werden
+    // Initialisierung des Prozess
+    sem_init(&semaphore, 0, 1);                 // sem_init gibt an das der Semaphor mit den Prozessen arbeiten soll
+                                                // dadurch können wir sem_post und sem_wait implementieren
+
+    // 1. Segment---------------------------------------------------------------
+    // Initialisierung
+    int shared_memory_key1 = 1234;               // Schlüssel, der an shmget() übergeben werden soll
+    int shm_id1;                                 // Rückgabewert von shmget()
+    int shmflg1;                                 // shmflg wird an shmget() übergeben
+    int returncode_shmget1;
+    int returncode_shmdt1;
+    int returncode_sprintf1;
+    int returncode_printf1;
+    int returncode_shmctl1;
+    char *sharedmempointer1;
+
+    // Gemeinsames Speichersegment erzeugen 
+    returncode_shmget1 = shmget(shared_memory_key1, MAXMEMSIZE, IPC_CREAT | 0600); //IPC_CREAT = Segment erzeugen, wenn es noch nicht existiert, 0600 = Zugriffsrechte auf das neue Segment
+                                                                                   //shmget=Gemeinsames Speichersegment erzeugen
+    if (returncode_shmget1 < 0)
+    {
+        printf("Das Segment konnte nicht erstellt werden.\n");
+        perror("shmget");
+        exit(1);
+    }
+    else
+    {
+        printf("Das 1.Segment wurde erstellt.\n");
+    }
+
+    // Gemeinsames Speichersegment anhängen
+    sharedmempointer1 = (char *)shmat(returncode_shmget1, 0, 0);        //shmat=adressraum wird angehängt, wenn 0 dann wählt das System eine geeignete adresse
+    if (sharedmempointer1 == (char *)-1)
+    {
+        printf("Das Segment konnte nicht angehängt werden.\n");
+        perror("shmat");
+        exit(1);
+    }
+    else
+    {
+        printf("Das 1.Segment wurde angehängt.\n");
+    }
+
+    // 2. Segment---------------------------------------------------------------
+    // Initialisierung
+    int shared_memory_key2 = 12345;
+    int shm_id2;
+    int shmflg2; // shmflg wird an shmget() übergeben
+    int returncode_shmget2;
+    int returncode_shmdt2;
+    int returncode_sprintf2;
+    int returncode_printf2;
+    int returncode_shmctl2;
+    char *sharedmempointer2;
+
+    // Gemeinsames Speichersegment erzeugen
+    returncode_shmget2 = shmget(shared_memory_key2, MAXMEMSIZE, IPC_CREAT | 0600);
+
+    if (returncode_shmget2 < 0)
+    {
+        printf("Das Segment konnte nicht erstellt werden.\n");
+        perror("shmget");
+        exit(2);
+    }
+    else
+    {
+        printf("Das 2.Segment wurde erstellt.\n");
+    }
+
+    // Gemeinsames Speichersegment anhängen
+    sharedmempointer2 = (char *)shmat(returncode_shmget2, 0, 0);
+    if (sharedmempointer2 == (char *)-1)
+    {
+        printf("Das Segment konnte nicht angehängt werden.\n");
+        perror("shmat");
+        exit(2);
+    }
+    else
+    {
+        printf("Das 2.Segment wurde angehängt.\n");
+    }
+
+    // 3. Segment---------------------------------------------------------------
+    // Initialisierung
+    int shared_memory_key3 = 123456;
+    int shm_id3;
+    int shmflg3; // shmflg wird an shmget() übergeben
+    int returncode_shmget3;
+    int returncode_shmdt3;
+    int returncode_sprintf3;
+    int returncode_printf3;
+    int returncode_shmctl3;
+    char *sharedmempointer3;
+
+    // Gemeinsames Speichersegment erzeugen
+    returncode_shmget3 = shmget(shared_memory_key3, MAXMEMSIZE, IPC_CREAT | 0600);
+
+    if (returncode_shmget3 < 0)
+    {
+        printf("Das Segment konnte nicht erstellt werden.\n");
+        perror("shmget");
+        exit(3);
+    }
+    else
+    {
+        printf("Das 3.Segment wurde erstellt.\n");
+    }
+
+    // Gemeinsames Speichersegment anhängen
+    sharedmempointer3 = (char *)shmat(returncode_shmget3, 0, 0);
+    if (sharedmempointer3 == (char *)-1)
+    {
+        printf("Das Segment konnte nicht angehängt werden.\n");
+        perror("shmat");
+        exit(3);
+    }
+    else
+    {
+        printf("Das 3.Segment wurde angehängt.\n");
+    }
+    printf("\n");
+    // Prozesse-----------------------------------------------------------------------------------
+    //Erzeugung von Prozesse
+    printf("Conv: Dieser Prozess erzeugt Zufallszahlen.\n");
+    printf("Conv: PID: %i\n", getpid());                            //getpid() gibt die Prozess-ID des aufrufenden Prozesses zurück
+    // Anzahl von Zufallszahlen
+    int anzahlZahlen;
+    int i;
+    int array[10];
+
+    // Zufallszahlen erzeugen
+    srand(time(NULL));                                              //srand initialisiert den Zufallsgenerator mit time wird die zeit initialisiert aber wir geben dem den wert NULL
+
+    // Es können maximal 10 Zufallszahlen erzeugt werden
+    anzahlZahlen = rand() % 10 + 1;                                 //Eine einzige Zahl wird erstellt
+
+    // Eine einzige Zahl wird erstellt
+    printf("%i ", anzahlZahlen);                                    //anzahlzahlen wird ausgegeben
+    printf("Zufallszahlen: ");                              
+
+    for (i = 0; i < anzahlZahlen; i++)                              // For schleife für zufallszahlen
+    {
+        // Die Zufallszahlen sind zwischen 0 und 10
+        array[i] = rand() % 11;                                     // hier werden zufallszahlen zwischen 0 und 10 zufällig generiert
+        printf("%d ", array[i]);                                    // hier wird der Array (Zufallszahlen) ausgegeben
+    }
+    printf("\n");
+    //Elemente in das gemeinsame Speichersegment schreiben.
+    returncode_sprintf1 = sprintf(sharedmempointer1, "%d", anzahlZahlen);  
+    if (returncode_sprintf1 < 0)
+    {
+        printf("Der Schreibzugriff ist fehlgeschlagen.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("\n");
+        printf("%i Elemente wurden ins 1.Segment geschrieben.\n", anzahlZahlen);
+    }
+
+    //Elemente in das 2.gemeinsame Speichersegment schreiben.
+    returncode_sprintf2 = sprintf(sharedmempointer2, "%d", anzahlZahlen);
+    if (returncode_sprintf2 < 0)
+    {
+        printf("Der Schreibzugriff ist fehlgeschlagen.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("%i Elemente wurden ins 2.Segment geschrieben.\n", anzahlZahlen);
+    }
+    //Elemente in das gemeinsame Speichersegment schreiben.
+    returncode_sprintf3 = sprintf(sharedmempointer3, "%d", anzahlZahlen);  
+    if (returncode_sprintf3 < 0)
+    {
+        printf("Der Schreibzugriff ist fehlgeschlagen.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("%i Elemente wurden ins 3.Segment geschrieben.\n", anzahlZahlen);
+    }
+
+    printf("\n");
+    //Prozess 1--------------------------------------------------------------------------------------------------
+    int id1 = fork();                         // Hier wird der erste Prozess den wir id1 genannt haben "geforkt" fork=gabelung in Kind/Elternprozess
+    if (id1 == 0)                             // wenn id1 == 0 ist befinden wir uns im Kindprozess
+    {
+        //Semaphore sperren
+        sem_wait(&semaphore);                 //muss am Anfang eines Prozesses
+                                              //sem_wait sperrt die Semaphore 
+
+        printf("Stat:  Dieser Prozess hat die Messwerte von Conv ausgelesen und statistische Daten (Mittelwert und Summe) berechnet.\n");
+        printf("Stat: PID: %i\n", getpid());
+        int summe = 0;
+        float mittelwert = 0;
+
+        // Die Zeichenkette im gemeinsamen Speichersegment ausgeben.
+        if (printf("Inhalt des 1. Segments: %s\n", sharedmempointer1) < 0)
+        {
+            printf("Der Lesezugriff ist fehlgeschlagen.\n");
+            exit(1);
+        }
+
+        // Summe und Mittelwert berechnen
+        for (i = 0; i < anzahlZahlen; i++)
+        {
+            summe += array[i];                  //+= : kombinierte Zuweisung, summe wurde mit 0 initialisiert dh: 0 + alle zufallszahlen die kommen
+        }
+        mittelwert = (float)summe / anzahlZahlen;       //hier wird der Mittelwert berechnet
+        printf("\n");
+
+        //Elemente in das gemeinsame Speichersegment schreiben.
+        returncode_sprintf3 = sprintf(sharedmempointer3, "%d", summe);
+        if (returncode_sprintf3 < 0)
+        {
+            printf("Der Schreibzugriff ist fehlgeschlagen.\n");
+            exit(1);
+        }
+        else
+        {
+            printf("%i Elemente(summe) wurden ins 3.Segment geschrieben.\n", returncode_sprintf3);
+        }
+
+        //Elemente in das gemeinsame Speichersegment schreiben.
+        returncode_sprintf3 = sprintf(sharedmempointer3, "%f", mittelwert);
+        if (returncode_sprintf3 < 0)
+        {
+            printf("Der Schreibzugriff ist fehlgeschlagen.\n");
+            exit(1);
+        }
+        else
+        {
+            printf("%i Elemente(mittelwert) wurden ins 3.Segment geschrieben.\n", returncode_sprintf3);
+        }
+
+
+        //Semaphore entsperren
+        sem_post(&semaphore);                 //Muss an jedes Ende eines Prozesses
+                                              //entsperrt den Semaphor. Wenn folglich der Wert >0 wird dann wird ein anderer Prozess der durch sem_wait wartet "freigegeben" und der aktelle Sema gesperrt
+
+
+        //Prozess 2-------------------------------------------------------------------------------------------------
+        int id3 = fork();
+        if (id3 == 0)
+        {
+            //Semaphore sperren
+            sem_wait(&semaphore);
+
+            printf("Report: Dieser Prozess hat auf die Ergebnisse von Stat zugegriffen und die statistischen Daten in der Shell ausgegeben.\n");
+            printf("Report: PID: %i\n", getpid());
+
+            printf("Summe: %d\n ", summe);
+            printf("Mittelwert: %.2f\n ", mittelwert);
+
+            //Semaphore entsperren
+            sem_post(&semaphore);
+        }
+    }
+    else
+    {
+        //Prozess 3-----------------------------------------------------------------------------------------------
+        int id2 = fork();
+        if (id2 == 0)
+        {
+            //Semaphore sperren
+            sem_wait(&semaphore);
+
+            printf("Log: Dieser Prozess hat die Messwerte von Conv ausgelesen und in convDat.txt geschrieben.\n");
+            printf("Log: PID: %i\n", getpid());
+
+            // Die Zeichenkette im gemeinsamen Speichersegment ausgeben.
+            if (printf("Inhalt des 2.Segments: %s\n", sharedmempointer2) < 0)
+            {
+                printf("Der Lesezugriff ist fehlgeschlagen.\n");
+                exit(1);
+            }
+
+            FILE *file = fopen("convDat.txt", "w");                 //fopen= neue Datei erstellen, FILE=Enthält alle notwendigen Informationen
+            if (file == NULL)                                       //Wenn file keine Informationen enthält soll Fehlermeldung kommen
+            {
+                printf("Fehler beim erstellen eines Dateis!\n");
+                return 18;
+            }
+            for (i = 0; i < anzahlZahlen; i++)
+            {
+                fprintf(file, "%d\t", array[i]);                    //fprintf= gibt eine formatierte Ausgabe aus, \t = tabstop
+            }
+
+            fclose(file);                                           //fclose=schließt die durch fopen geöffnete Datei
+
+            //Semaphore entsperren
+            sem_post(&semaphore);
+        }
+    }
+    printf("\n");
+    // Lösen und Löschen---------------------------------------------------------------------------------------
+    // Segment1
+    shmdt(sharedmempointer1);                           //shmdt=trennt das shared Memory
+    shmctl(returncode_shmget1, IPC_RMID, 0);            //shmctl=bietet eine Vielzahl von Steuervorgängen für Shm|IPC_RMID=Entfernt die Shared-Memory-ID aus dem System und zerstört das Shared-Memory-Segment.
+                                                        //0=es läuft kein Prozess mehr
+    // Segment2
+    shmdt(sharedmempointer2);
+    shmctl(returncode_shmget2, IPC_RMID, 0);
+
+    // Segment2
+    shmdt(sharedmempointer2);
+    shmctl(returncode_shmget2, IPC_RMID, 0);
+
+    //Semaphore entfernen-----------------------------------------------------------------------------------------------
+    sem_unlink("Semaphore");              //entfernt den Semaphor
+    sem_close(&semaphore);                //semaphor schließen
+
+}
